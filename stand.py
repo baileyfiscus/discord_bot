@@ -1,27 +1,30 @@
 class Stand:
-    name
-    user
-    description
-    __destructivePower
-    __speed
-    __range
-    __durability
-    __precision
-    __developmentPotential
+    name = None
+    user = None
+    description = None
+    __destructivePower = None
+    __speed = None
+    __range = None
+    __durability = None
+    __precision = None
+    __developmentPotential = None
+    standCount = None
 
-    standCount
     def __init__(self, name, user, description, destructivePower, speed, range, durability, precision, developmentPotential):
-    self.name = name
-    self.user = user
-    self.description = description
-    self.destructivePower = destructivePower
-    self.speed = speed
-    self.range = range
-    self.durability = durability
-    self.precision = precision
-    self.developmentPotential = developmentPotential
+        print("starting init\n")
+        self.name = name
+        self.user = user
+        self.description = description
+        self.destructivePower = destructivePower
+        self.speed = speed
+        self.range = range
+        self.durability = durability
+        self.precision = precision
+        self.developmentPotential = developmentPotential
+        print("init complete\n")
 
     def die(self):
+        return
     
     def readInfo(self):
         return "|Stand Name| {}\n|Stand Master| {}\n|Description| {}\n|Destructive Power| {}\n|Speed| {}\n|Range| {}\n|Durability| {}\n|Precision| {}\n|Development Potential| {}\n".format(self.name, self.user, self.description, self.destructivePower, self.speed, self.range, self.durability, self.precision, self.developmentPotential)
