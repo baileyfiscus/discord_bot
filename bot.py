@@ -5,7 +5,7 @@ import requests
 import asyncio
 import stand
 import randomGameGenerator
-import token
+import myToken
 
 command_prefix='$'
 bot = commands.Bot(command_prefix)
@@ -96,4 +96,11 @@ async def standEdit():
 async def standHelp(ctx):
     await ctx.send("Use $stand awaken \"Stand Name\", \"Stand User\", \"Description\", \"Destructive Power\", \"Speed\", \"Range\", \"Durability\", \"Precision\", \"Development Potential\"")
 
-bot.run(token)
+
+@bot.command()
+async def randomPornCategory(ctx):
+    print(ctx.author)
+    print(ctx.author.id)
+    await ctx.send("Milf")
+
+bot.run(myToken.token)
