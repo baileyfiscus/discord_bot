@@ -29,7 +29,7 @@ async def botHelp(ctx):
     message = ""
     for line in helpFile:
         message += line
-    await ctx.(message)
+    await ctx.message
 
 @bot.command()
 async def echo(ctx, *arg):
@@ -40,7 +40,7 @@ async def echo(ctx, *arg):
     message = ""
     for i in arg:
         message += (i + " ")
-    await ctx.(message)
+    await ctx.message
 
 @bot.command()
 async def randomGame(ctx, playerCount):
@@ -51,7 +51,7 @@ async def randomGame(ctx, playerCount):
         return
     gamesList = randomGameGenerator.getList(playerCount)
     game = random.choice(gamesList)
-    await ctx.(game)
+    await ctx.game
 
 @bot.command()
 async def randomDrink(ctx, arg):
@@ -66,7 +66,7 @@ async def listGames(ctx, playerCount):
     if(userCheck(ctx, str(ctx.author.id))):
         return
     gamesList = randomGameGenerator.getList(playerCount)
-    await ctx.(gamesList)
+    await ctx.gamesList
 
 @bot.command()
 async def suggest(ctx, *arg):
@@ -81,28 +81,31 @@ async def suggest(ctx, *arg):
     f = open("suggestion.txt","a")
     f.write(message + '\n')
     f.close()
-    await ctx.(message)
+    await ctx.message
 
 @bot.command()
 async def standAwaken(ctx, name, user, description, destructivePower, speed, range, durability, precision, developmentPotential):
-    await ctx.("awaken begin")
+    message = "awaken begin"
+    await ctx.message
     newStand = Stand(name, user, description, destructivePower, speed, range, durability, precision, developmentPotential)
     message = newStand.readInfo()
-    await ctx.(message)
+    await ctx.message
 
 @bot.command()
 async def standEdit():
-    await ctx.()
+    await ctx
 
 @bot.command()
 async def standHelp(ctx):
-    await ctx.("Use $stand awaken \"Stand Name\", \"Stand User\", \"Description\", \"Destructive Power\", \"Speed\", \"Range\", \"Durability\", \"Precision\", \"Development Potential\"")
+    message =( "Use $stand awaken \"Stand Name\", \"Stand User\", \"Description\", \"Destructive Power\", \"Speed\", \"Range\", \"Durability\", \"Precision\", \"Development Potential\"")
+    await ctx.message
 
 
 @bot.command()
 async def randomCategory(ctx):
     print(ctx.author)
     print(ctx.author.id)
-    await ctx.("Wholesome")
-
+    message = ("Wholesome")
+    await ctx.message
+    
 bot.run(myToken.token)
