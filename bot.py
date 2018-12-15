@@ -26,8 +26,10 @@ def userCheck(ctx, fella):
 @bot.command()
 async def botHelp(ctx):
     helpFile = open("README.txt")
+    message = ""
     for line in helpFile:
-        await ctx.send(line.rstrip('\n'))
+        message += line
+    await ctx.(message)
 
 @bot.command()
 async def echo(ctx, *arg):
@@ -38,7 +40,7 @@ async def echo(ctx, *arg):
     message = ""
     for i in arg:
         message += (i + " ")
-    await ctx.send(message)
+    await ctx.(message)
 
 @bot.command()
 async def randomGame(ctx, playerCount):
@@ -49,7 +51,7 @@ async def randomGame(ctx, playerCount):
         return
     gamesList = randomGameGenerator.getList(playerCount)
     game = random.choice(gamesList)
-    await ctx.send(game)
+    await ctx.(game)
 
 @bot.command()
 async def randomDrink(ctx, arg):
@@ -64,7 +66,7 @@ async def listGames(ctx, playerCount):
     if(userCheck(ctx, str(ctx.author.id))):
         return
     gamesList = randomGameGenerator.getList(playerCount)
-    await ctx.send(gamesList)
+    await ctx.(gamesList)
 
 @bot.command()
 async def suggest(ctx, *arg):
@@ -79,28 +81,28 @@ async def suggest(ctx, *arg):
     f = open("suggestion.txt","a")
     f.write(message + '\n')
     f.close()
-    await ctx.send(message)
+    await ctx.(message)
 
 @bot.command()
 async def standAwaken(ctx, name, user, description, destructivePower, speed, range, durability, precision, developmentPotential):
-    await ctx.send("awaken begin")
+    await ctx.("awaken begin")
     newStand = Stand(name, user, description, destructivePower, speed, range, durability, precision, developmentPotential)
     message = newStand.readInfo()
-    await ctx.send(message)
+    await ctx.(message)
 
 @bot.command()
 async def standEdit():
-    await ctx.send()
+    await ctx.()
 
 @bot.command()
 async def standHelp(ctx):
-    await ctx.send("Use $stand awaken \"Stand Name\", \"Stand User\", \"Description\", \"Destructive Power\", \"Speed\", \"Range\", \"Durability\", \"Precision\", \"Development Potential\"")
+    await ctx.("Use $stand awaken \"Stand Name\", \"Stand User\", \"Description\", \"Destructive Power\", \"Speed\", \"Range\", \"Durability\", \"Precision\", \"Development Potential\"")
 
 
 @bot.command()
-async def randomPornCategory(ctx):
+async def randomCategory(ctx):
     print(ctx.author)
     print(ctx.author.id)
-    await ctx.send("Milf")
+    await ctx.("Wholesome")
 
 bot.run(myToken.token)
