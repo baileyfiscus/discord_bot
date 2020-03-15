@@ -6,106 +6,59 @@ import asyncio
 import stand
 import randomGameGenerator
 import myToken
+import AccessGoogleSheet
 
 command_prefix='$'
 bot = commands.Bot(command_prefix)
 
 @bot.event
 async def on_ready():
-    print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('-----')
+  print('Logged in as')
+  print(bot.user.name)
+  print(bot.user.id)
+  print('-----')
+  # Create banned users array
+  # Create gameslist objects list
 
-def userCheck(ctx, fella):
-    banFile = open("banList.txt", "r")
-    for line in banFile:
-        if line.rstrip('\n') == fella:
-            return True
-     
-@bot.command()
-async def botHelp(ctx):
-    helpFile = open("README.txt")
-    message = ""
-    for line in helpFile:
-        message += line
-    await ctx.message
-
-@bot.command()
-async def echo(ctx, *arg):
-    print(ctx.author)
-    print(ctx.author.id)
-    if(userCheck(ctx, str(ctx.author.id))):
-        return
-    message = ""
-    for i in arg:
-        message += (i + " ")
-    await ctx.message
-
-@bot.command()
-async def randomGame(ctx, playerCount):
-    #takes in number of players and returns an appropriate game
-    print(ctx.author)
-    print(ctx.author.id)
-    if(userCheck(ctx, str(ctx.author.id))):
-        return
-    gamesList = randomGameGenerator.getList(playerCount)
-    game = random.choice(gamesList)
-    await ctx.game
-
-@bot.command()
-async def randomDrink(ctx, arg):
-    #takes in liquor, wine, or beer and returns a 
+@bot.event
+async def on_message(message):
+  if message.author == bot.user:
+    return
+  if Ban.InBanList(message.author):
     return
 
-@bot.command()
-async def listGames(ctx, playerCount):
-    #returns list of all games with given player count
-    print(ctx.author)
-    print(ctx.author.id)
-    if(userCheck(ctx, str(ctx.author.id))):
-        return
-    gamesList = randomGameGenerator.getList(playerCount)
-    await ctx.gamesList
+  print(str(message.author) + " - " + str(message.content))
 
-@bot.command()
-async def suggest(ctx, *arg):
-    #need to change arg to *
-    print(ctx.author)
-    print(ctx.author.id)
-    if(userCheck(ctx, str(ctx.author.id))):
-        return
-    message = "Suggestion received: "
-    for i in arg:
-        message += (i + " ")
-    f = open("suggestion.txt","a")
-    f.write(message + '\n')
-    f.close()
-    await ctx.message
+  if message.content.startswith(command_prefix):
+    response = Process_Command(message.content[len(command_prefix):])
+    await message.channel.send(response)
+  elif message.author.bot:
+    # Messages was written by another bot
+    for embed in message.embeds:
+      descriptionList = str(embed.description).splitlines()
+      print(descriptionList)
+      if (len(descriptionList) == 7):
+        if (descriptionList[2].startswith("Length")):
+          songName, songLink = descriptionList[0].split('https')
+          print(songName)
+          print(songLink)
+          songName = songName[1:-1]
+          songLink= 'https' + songLink[:-1]
+          songRequestor = descriptionList[4][len("Requested by:") + 3:]
+          AccessGoogleSheet.AddSongEntry(songName, songLink, songRequestor)
+      
 
-@bot.command()
-async def standAwaken(ctx, name, user, description, destructivePower, speed, range, durability, precision, developmentPotential):
-    message = "awaken begin"
-    await ctx.message
-    newStand = Stand(name, user, description, destructivePower, speed, range, durability, precision, developmentPotential)
-    message = newStand.readInfo()
-    await ctx.message
+def Process_Command(command):
+  if command.startswith("randomGame"):
+    players = int(command[len("randomGame"):])
+    gamesList = randomGameGenerator.getList(players)
+    print(str(players))
+    print(gamesList)
+    if gamesList != []:
+      game = random.choice(gamesList)
+      return game
+    else:
+      return "No games found for " + str(players) + " players."
+  return
 
-@bot.command()
-async def standEdit():
-    await ctx
-
-@bot.command()
-async def standHelp(ctx):
-    message =( "Use $stand awaken \"Stand Name\", \"Stand User\", \"Description\", \"Destructive Power\", \"Speed\", \"Range\", \"Durability\", \"Precision\", \"Development Potential\"")
-    await ctx.message
-
-
-@bot.command()
-async def randomCategory(ctx):
-    print(ctx.author)
-    print(ctx.author.id)
-    message = ("Wholesome")
-    await ctx.message
-    
-bot.run(myToken.token)
+bot.run(myToken.bot_token)
