@@ -51,7 +51,8 @@ async def on_message(message):
 def Process_Command(command):
   if command.startswith("randomGame"):
     players = int(command[len("randomGame"):])
-    gamesList = randomGameGenerator.getList(players)
+    # TODO store in memory / memoize with mtime?
+    gamesList = randomGameGenerator.get_list(players)
     print(str(players))
     print(gamesList)
     if gamesList != []:
