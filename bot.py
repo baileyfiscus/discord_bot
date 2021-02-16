@@ -7,6 +7,7 @@ import stand
 import randomGameGenerator
 import myToken
 import AccessGoogleSheet
+import Games
 
 command_prefix='$'
 bot = commands.Bot(command_prefix)
@@ -22,18 +23,21 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+  # Ignore our own messages. Important!
   if message.author == bot.user:
     return
+
+  # Don't accept commands from banned users.
   if Ban.InBanList(message.author):
     return
 
-  print(str(message.author) + " - " + str(message.content))
-
+  # Handle a command.
   if message.content.startswith(command_prefix):
-    response = Process_Command(message.content[len(command_prefix):])
+    response = process_command(message.content[len(command_prefix):])
     await message.channel.send(response)
+
+  # Handle messages from other bots.
   elif message.author.bot:
-    # Messages was written by another bot
     for embed in message.embeds:
       descriptionList = str(embed.description).splitlines()
       print(descriptionList)
@@ -46,10 +50,12 @@ async def on_message(message):
           songLink= 'https' + songLink[:-1]
           songRequestor = descriptionList[4][len("Requested by:") + 3:]
           AccessGoogleSheet.AddSongEntry(songName, songLink, songRequestor)
-      
 
-def Process_Command(command):
-  if command.startswith("randomGame"):
+def process_command(command):
+  # TODO Write a grammar to tokenize the commands instead of just splitting
+  cmd = command.split(" ")
+
+  if cmd[0] == "randomGame":
     players = int(command[len("randomGame"):])
     # TODO store in memory / memoize with mtime?
     gamesList = randomGameGenerator.get_list(players)
@@ -58,8 +64,15 @@ def Process_Command(command):
     if gamesList != []:
       game = random.choice(gamesList)
       return game
+
     else:
       return "No games found for " + str(players) + " players."
-  return
+
+  elif cmd[0] == "g2a":
+    if len(cmd) > 2:
+      cmd[2] = int(cmd[2])
+
+    g2a_info = Games.scrape_g2a(*cmd[1:])
+    return g2a_formatter(g2a_info)
 
 bot.run(myToken.bot_token)
