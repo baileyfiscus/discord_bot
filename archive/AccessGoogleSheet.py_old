@@ -7,7 +7,7 @@ def InitGoogleSheetsAuth():
   scope = ['https://spreadsheets.google.com/feeds',\
           'https://www.googleapis.com/auth/drive']
 
-  creds = ServiceAccountCredentials.from_json_keyfile_name('discord-trending-songs-931a0cba4495.json', scope)
+  creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
   client = gspread.authorize(creds)
 
   sheet = client.open("Discord_Trending_Songs").sheet1
