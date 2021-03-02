@@ -13,7 +13,10 @@ class DungeonsAndDragons(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(
+            help = "Rolls a die with the given number of sides.",
+            brief = "Roll n sided die."
+            )
     async def roll(self, ctx, n):
         n = int(n)
         message = "{} is an invalid number to roll.".format(n)
@@ -22,9 +25,12 @@ class DungeonsAndDragons(commands.Cog):
             message = "Rolling {}-sided die... rolled {}".format(n, val)
         await ctx.send(message)
 
-    @commands.command()
-    async def get_spell_info(self, ctx, *args):
-        spellName = " ".join(args)
+    @commands.command(
+            help = "Prints information about the given spell from D&D 5e.",
+            brief = "Print spell info."
+            )
+    async def get_spell_info(self, ctx, *spellName):
+        spellName = " ".join(spellName)
         spellInfo = "Spell not found: " + spellName
         if spellName in allSpellsDf["Spell Name"].values:
             spellEntry = allSpellsDf.loc[allSpellsDf['Spell Name'] == spellName].values.tolist()
