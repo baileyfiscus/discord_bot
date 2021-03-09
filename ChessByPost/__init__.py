@@ -3,3 +3,4 @@ from . import Player
 from . import Controller
 import cv2
 import os
+import enum

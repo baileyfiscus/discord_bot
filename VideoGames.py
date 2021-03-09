@@ -46,28 +46,84 @@ class VideoGames(commands.Cog):
         msg = self.g2aObj.search(name)
         await ctx.send(msg)
 
+    def Get_Chess_Message(self, playerName, retCode):
+        msg = ""
+        if retCode == ChessByPost.Controller.ReturnCode.UNKNOWN_ERROR:
+            msg = "An unknown error has occurred.".format()
+        elif retCode == ChessByPost.Controller.ReturnCode.PLAYER_NOT_FOUND:
+            msg = "Player not found: {}.".format(playerName)
+        elif retCode == ChessByPost.Controller.ReturnCode.NOT_PLAYERS_TURN:
+            msg = "It is not {}'s turn.".format(playerName)
+        elif retCode == ChessByPost.Controller.ReturnCode.INVALID_COORD:
+            msg = "Move failed: inavlid coordinate.".format()
+        elif retCode == ChessByPost.Controller.ReturnCode.NO_PIECE_AT_COORD:
+            msg = "Move failed: no piece at coordinate.".format()
+        elif retCode == ChessByPost.Controller.ReturnCode.INVALID_MOVE :
+            msg = "Move failed: that is not a valid move.".format()
+        elif retCode == ChessByPost.Controller.ReturnCode.INVALID_MOVE_KING_IN_CHECK :
+            msg = "Move failed: king will still be in check.".format()
+        elif retCode == ChessByPost.Controller.ReturnCode.SUCCESSFUL_MOVE :
+            msg = "Successful move.".format()
+        elif retCode == ChessByPost.Controller.ReturnCode.SUCCESSFUL_MOVE_KING_IN_CHECK :
+            msg = "Successful move: king is now in check!".format()
+        elif retCode == ChessByPost.Controller.ReturnCode.SUCCESSFUL_MOVE_CHECKMATE :
+            msg = "Successful move: checkmate!".format()
+            otherPlayerName = self.chessDict[playerName]
+            self.chessDict.pop(playerName)
+            self.chessDict.pop(otherPlayerName)
+            # controller should get cleaned up by the garbage collector
+        elif retCode == ChessByPost.Controller.ReturnCode.GAMEOVER:
+            msg = "Error: game is already over.".format()
+        else:
+            msg = "Something went wrong: not a valid return code."
+        return msg
+
     @commands.command(
             help = "todo",
             brief = "todo"
             )
     async def chess(self, ctx, *args):
-        msg = ""
+        retCode = ChessByPost.Controller.ReturnCode.UNKNOWN_ERROR
         imgPath = ""
 
         if ctx.author in self.chessDict:
-            controller = self.chessDict[ctx.author]
-            msg = controller.Do_Move_Algebraic_Notation(ctx.author, args[0], args[1])
+            controller = self.chessDict[ctx.author][0]
+            retCode = controller.Do_Move_Algebraic_Notation(ctx.author, args[0], args[1])
             imgPath = "temp/board.png"
-            cv2.imwrite(imgPath, controller.Get_Board_Image(controller.board))
+            cv2.imwrite(imgPath, controller.boardImg)
         else:
-            otherPlayer = args
+            otherPlayer = args[0]
+            print(otherPlayer)
+            if not otherPlayer.startswith("<@!"):
+                msg = "Error: you must @ the other player."
+                await ctx.send(msg)
+                return
+            otherPlayer = otherPlayer[3:-1]
+            print(otherPlayer)
+            isInChannel = False
+            for member in ctx.channel.members:
+                if str(member.id) == str(otherPlayer):
+                    otherPlayer = member
+                    isInChannel = True
+                    break
+            if not isInChannel:
+                msg = "Error: the other person must be in this channel."
+                await ctx.send(msg)
+                return
+            if otherPlayer == ctx.author:
+                msg = "Error: you cannot play against yourself. It's just sad."
+                await ctx.send(msg)
+                return
             controller = ChessByPost.Controller.Controller(ctx.author, otherPlayer)
-            self.chessDict[ctx.author] = controller
-            self.chessDict[otherPlayer] = controller
-            msg = "Game created for {} and {}".format(ctx.author, otherPlayer)
+            self.chessDict[ctx.author] = (controller, otherPlayer)
+            self.chessDict[otherPlayer] = (controller, ctx.author)
             imgPath = "temp/board.png"
-            cv2.imwrite(imgPath, controller.Get_Board_Image(controller.board))
+            cv2.imwrite(imgPath, controller.boardImg)
+            msg = "Game created for {} and {}".format(ctx.author, otherPlayer)
+            await ctx.send(msg, file=discord.File(imgPath))
+            return
 
+        msg = self.Get_Chess_Message(ctx.author, retCode)
         if imgPath != "":
             await ctx.send(msg, file=discord.File(imgPath))
         else:

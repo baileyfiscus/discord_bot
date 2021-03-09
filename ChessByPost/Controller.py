@@ -9,6 +9,20 @@ from . import Piece
 from . import Player
 import cv2
 import os
+from enum import Enum
+
+class ReturnCode(Enum):
+    UNKNOWN_ERROR = 0
+    PLAYER_NOT_FOUND = 1
+    NOT_PLAYERS_TURN = 2
+    INVALID_COORD = 3
+    NO_PIECE_AT_COORD = 4
+    INVALID_MOVE = 5
+    INVALID_MOVE_KING_IN_CHECK = 6
+    SUCCESSFUL_MOVE = 7
+    SUCCESSFUL_MOVE_KING_IN_CHECK = 8
+    SUCCESSFUL_MOVE_CHECKMATE = 9
+    GAMEOVER = 10
 
 this_dir, this_filename = os.path.split(__file__)
 IMAGE_PATH = os.path.join(this_dir, "images")
@@ -26,6 +40,8 @@ class Controller():
         self.player1.Place_Pieces(self.board)
         self.player2.Place_Pieces(self.board)
         self.Print_Board(self.board)
+        #self.boardImg = self.Create_Board_Image(self.board)
+        self.boardImg = self.Get_Starting_Board_Image()
         
     def Create_Board(self):
         board = []
@@ -46,21 +62,28 @@ class Controller():
                     newBoard[y][x] = piece
         return newBoard
 
-    def Print_Board(self, board):
+    def Get_Symbolic_Board(self, board):
+        arr = []
         for row in board:
-            output = []
+            rowArr = []
             for col in row:
                 if isinstance(col, Piece.Piece):
                     side = "W"
                     if col.side == Piece.BLACK:
                         side = "B"
-                    output.append(side + str(col.code))
+                    rowArr.append(side + str(col.code))
                 else:
-                    output.append("00")
-            print(output)
+                    rowArr.append("00")
+            arr.append(rowArr)
+        return arr
+
+    def Print_Board(self, board):
+        arr = self.Get_Symbolic_Board(board)
+        for row in arr:
+            print(row)
         print()
       
-    def Get_Board_Image(self, board):
+    def Create_Board_Image(self, board):
         boardImg = cv2.imread(os.path.join(IMAGE_PATH, "empty_board.png"))
         print(os.path.join(IMAGE_PATH, "empty_board.png"))
         for y in range(len(board)):
@@ -80,8 +103,38 @@ class Controller():
                                 boardImg[yOffset + j][xOffset + i] = color
         return boardImg
 
+    def Get_Starting_Board_Image(self):
+        return cv2.imread(os.path.join(IMAGE_PATH, "starting_board.png"))
+
+    def Update_Board_Image(self, board, boardImg, oldBoardArr, newBoardArr):
+        for y in range(len(oldBoardArr)):
+            for x in range(len(oldBoardArr[0])):
+                if newBoardArr[y][x] == oldBoardArr[y][x]:
+                    continue
+                tile = board[y][x]
+                if isinstance(tile, Piece.Piece):
+                    pieceImg = cv2.imread(os.path.join(IMAGE_PATH, "{}.png".format(tile.name)))
+                    xOffset = 2 * (x + 1) + pieceImg.shape[1] * x
+                    yOffset = boardImg.shape[0] - (y + 1) * (2 + pieceImg.shape[0])
+                    tileColor = boardImg[yOffset + 3][xOffset + 3]
+                    for j in range(pieceImg.shape[0]):
+                        for i in range(pieceImg.shape[1]):
+                            color = tileColor
+                            if pieceImg[j][i].any():
+                                color = pieceImg[j][i]
+                                if tile.side == Piece.BLACK:
+                                    color = 255 - pieceImg[j][i]
+                            boardImg[yOffset + j][xOffset + i] = color
+                else:
+                    xOffset = 2 * (x + 1) + 64 * x
+                    yOffset = boardImg.shape[0] - (y + 1) * (2 + 64)
+                    tileColor = boardImg[yOffset + 3][xOffset + 3]
+                    for j in range(64):
+                        for i in range(64):
+                            boardImg[yOffset + j][xOffset + i] = tileColor
+
     def Display_Board(self, board):
-        cv2.imshow('Board', self.Get_Board_Image(board))
+        cv2.imshow('Board', self.Create_Board_Image(board))
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         
@@ -136,51 +189,73 @@ class Controller():
             
     
     def Do_Move(self, name, x1, y1, x2, y2):
-        msg = "An error has occurred."
+        retCode = ReturnCode.UNKNOWN_ERROR
         if not name in self.playersDict.keys():
             msg = "{} is not a valid player.".format(name)
             print(msg)
-            return msg
+            retCode = ReturnCode.PLAYER_NOT_FOUND 
+            return retCode
             
         player = self.playersDict[name]
         if player.side != self.turn:
             msg = "It is not {}'s turn.".format(player.name)
             print(msg)
-            return msg
+            retCode = ReturnCode.NOT_PLAYERS_TURN
+            return retCode
         
         if self.isGameOver:
             msg = "The game is over."
             print(msg)
-            return msg
+            retCode = ReturnCode.GAMEOVER
+            return retCode
       
         if self.Check_Valid_Move(player, x1, y1, x2, y2):
             if self.Check_Player_In_Check(player, self.board):
-                if self.Will_Result_In_Check(x1, y1, x2, y2):
+                if self.Will_Result_In_Check(player, x1, y1, x2, y2):
                     msg = "Cannot do move, King still in check."
                     print(msg)
-                    return msg
+                    retCode = ReturnCode.INVALID_MOVE_KING_IN_CHECK
+                    return retCode
+            oldBoardArr = self.Get_Symbolic_Board(self.board)
             player.Do_Move(self.board, x1, y1, x2, y2)
+            newBoardArr = self.Get_Symbolic_Board(self.board)
+            self.Update_Board_Image(self.board, self.boardImg, oldBoardArr, newBoardArr)
             self.turn = player.side * -1
+            retCode = ReturnCode.SUCCESSFUL_MOVE
             otherPlayer = self.player2
             if player == self.player2:
                 otherPlayer = self.player1
             if self.Check_Player_In_Check(otherPlayer, self.board):
                 msg = "{} is now in check!".format(otherPlayer.name)
                 print(msg)
+                retCode = ReturnCode.SUCCESSFUL_MOVE_KING_IN_CHECK
                 if self.Player_Is_In_Checkmate(otherPlayer):
                     msg = "Checkmate! {} wins.".format(player.name)
                     print(msg)
                     self.isGameOver = True
+                    retCode = ReturnCode.SUCCESSFUL_MOVE_CHECKMATE
                 return msg
         else:
             print("Inavlid movement")
+            retCode = ReturnCode.INVALID_MOVE
+            if not isinstance(self.board[y1][x1], Piece.Piece):
+                    retCode = ReturnCode.NO_PIECE_AT_COORD 
             
-        return msg
+        return retCode
 
-    def Do_Move_Algebraic_Notation(self, playerName, pos1, pos2, display = True):
+    def Do_Move_Algebraic_Notation(self, playerName, pos1, pos2, display = False):
         x1 = (ord(pos1[0].lower()) - 96) - 1
         y1 = int(pos1[1]) - 1
         x2 = (ord(pos2[0].lower()) - 96) - 1
         y2 = int(pos2[1]) - 1
-        return self.Do_Move(playerName, x1, y1, x2, y2)
+        x1InRange = 0 <= x1 <= 7
+        y1InRange = 0 <= y1 <= 7
+        x2InRange = 0 <= x2 <= 7
+        y2InRange = 0 <= y2 <= 7
+        retCode = ReturnCode.INVALID_COORD
+        if x1InRange and y1InRange and x2InRange and y2InRange:
+            retCode = self.Do_Move(playerName, x1, y1, x2, y2)
+        if display:
+            self.Print_Board(self.board)
+        return retCode
  

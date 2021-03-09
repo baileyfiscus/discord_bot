@@ -11,7 +11,9 @@ import numpy
 import pandas
 
 command_prefix='$'
-bot = commands.Bot(command_prefix)
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix, intents=intents)
+
 
 bot.add_cog(VideoGames.VideoGames(bot))
 bot.add_cog(DungeonsAndDragons.DungeonsAndDragons(bot))
