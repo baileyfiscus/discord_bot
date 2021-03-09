@@ -4,11 +4,14 @@ import random
 import requests
 import asyncio
 import G2A
+import ChessByPost
+import cv2
 
 class VideoGames(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.g2aObj = G2A.G2A()
+        self.chessDict = {}
 
     def get_games_list(self, players):
         return randomGameGenerator.getList(players)
@@ -42,4 +45,32 @@ class VideoGames(commands.Cog):
         name = " ".join(gameName)
         msg = self.g2aObj.search(name)
         await ctx.send(msg)
+
+    @commands.command(
+            help = "todo",
+            brief = "todo"
+            )
+    async def chess(self, ctx, *args):
+        msg = ""
+        imgPath = ""
+
+        if ctx.author in self.chessDict:
+            controller = self.chessDict[ctx.author]
+            msg = controller.Do_Move_Algebraic_Notation(ctx.author, args[0], args[1])
+            imgPath = "temp/board.png"
+            cv2.imwrite(imgPath, controller.Get_Board_Image(controller.board))
+        else:
+            otherPlayer = args
+            controller = ChessByPost.Controller.Controller(ctx.author, otherPlayer)
+            self.chessDict[ctx.author] = controller
+            self.chessDict[otherPlayer] = controller
+            msg = "Game created for {} and {}".format(ctx.author, otherPlayer)
+            imgPath = "temp/board.png"
+            cv2.imwrite(imgPath, controller.Get_Board_Image(controller.board))
+
+        if imgPath != "":
+            await ctx.send(msg, file=discord.File(imgPath))
+        else:
+            await ctx.send(msg)
+
 
