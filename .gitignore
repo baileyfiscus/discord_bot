@@ -108,6 +108,9 @@ client_secret.json
 myToken.py
 All_Spells.csv
 temp/
+*.swp
 
 # Chess by post module
 ChessByPost/__pycache__/
+
+guilds.py

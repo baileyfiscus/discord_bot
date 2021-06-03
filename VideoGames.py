@@ -1,11 +1,13 @@
 import discord
 from discord.ext import commands
+from discord_slash import cog_ext, SlashContext
 import random
 import requests
 import asyncio
 import G2A
 import ChessByPost
 import cv2
+import randomGameGenerator
 
 class VideoGames(commands.Cog):
     def __init__(self, bot):
@@ -13,38 +15,95 @@ class VideoGames(commands.Cog):
         self.g2aObj = G2A.G2A()
         self.chessDict = {}
 
-    def get_games_list(self, players):
-        return randomGameGenerator.getList(players)
+    def get_games_list(self, players: int):
+        return randomGameGenerator.get_list(players)
 
-    @commands.command(
-            help = "Lists all squad games for the given number of players.",
-            brief = "Lists games."
+    @cog_ext.cog_slash(
+            name = "gameslist",
+            description = "Lists all squad games for the given number of players.",
             )
-    async def list_games(self, ctx, players):
-        players = int(players)
-        gamesList = self.get_games_list(players)
-        await ctx.send("Games for {} players are: {}".format(players, gamesList))
+    async def _gameslist(self, ctx: SlashContext, players: int):
+        gamesList = list(self.get_games_list(players))
+        await ctx.send("Games for {} players are:\n{}".format(players, "\n".join(gamesList)))
 
-    @commands.command(
-            help = "Chooses a random game for the given number of players.",
-            brief = "Chooses a random game to play."
+    @cog_ext.cog_slash(
+            name = "randomgame",
+            description = "Chooses a random game for the given number of players.",
             )
-    async def random_game(self, ctx, players):
+    async def _randomgame(self, ctx: SlashContext, players: int):
         players = int(players)
         gamesList = self.get_games_list(players)
         game = "No suitable game found."
         if gamesList != []:
             game = random.choice(gamesList)
-        await ctx.send("Random game for {} players: {}".format(players, game))
+        await ctx.send("Random game for {} players:\n{}".format(players, game))
 
-    @commands.command(
-            help = "Searches for the given game on G2A. Prints prices and links if found.",
-            brief = "Search for game on G2A."
+    @cog_ext.cog_slash(
+            name="g2a",
+            description = "Searches for the given game on G2A. Prints prices and links if found.",
             )
-    async def g2a(self, ctx, *gameName):
-        name = " ".join(gameName)
-        msg = self.g2aObj.search(name)
+    async def _g2a(self, ctx: SlashContext, gamename: str):
+        msg = self.g2aObj.search(gamename)
         await ctx.send(msg)
+
+    def Chess_New_Game(self, player1, player2):
+        game = ChessByPost.Controller.Controller(player1, player2)
+
+        if not player1 in self.chessDict.keys():
+            self.chessDict[player1] = {}
+        self.chessDict[player1][player2] = game
+
+        if not player2 in self.chessDict.keys():
+            self.chessDict[player2] = {}
+        self.chessDict[player2][player1] = game
+
+        imgPath = "temp/board.png"
+        cv2.imwrite(imgPath, game.boardImg)
+        msg = "Game created for {} and {}".format(player1, player2)
+        #await ctx.send(msg, file=discord.File(imgPath)) # todo
+        return
+
+    def Chess_Get_Game(self, player1, player2):
+        game = None
+        if player1 in self.chessDict.keys():
+            if player2 in self.chessDict[player1].keys:
+                game = self.chessDict[player1][player2]
+        return Game
+
+    def Chess_Move(self, game, player, startPos, endPos):
+        retCode = game.Do_Move_Algebraic_Notation(player, startPos, endPos)
+        imgPath = "temp/board.png"
+        cv2.imwrite(imgPath, controller.boardImg)
+        msg = self.Get_Chess_Message(ctx.author, retCode)
+        #await ctx.send(msg, file=discord.File(imgPath))
+        return
+
+    def Chess_Forfeit(self, game, player):
+        return
+
+    def Chess_Show_Board(self, game):
+        return
+
+    def Chess_Parse_Args(self, player1, args):
+        if len(args) == 0:
+            return
+
+        player2 = self.Get_Player_Name(args[0])
+        game = self.Chess_Get_Game(player1, player2)
+
+        subcommand = args[1]
+        if subcommand == "move" and len(args) >= 4:
+            startPos = args[2]
+            endPos = args[3]
+            self.Chess_Move(game, player, startPos, endPos)
+        #elif subcommd == "forfeit":
+        #    # Todo
+        #elif subcommd == "show":
+        #    # Show the current board
+        #elif subcommd == "turn":
+        #    # Display who's turn it is
+        #elif subcommd == "":
+        return
 
     def Get_Chess_Message(self, playerName, retCode):
         msg = ""

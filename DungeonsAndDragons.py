@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
+from discord_slash import cog_ext, SlashContext
 import random
-import requests
-import asyncio
+#import requests
+#import asyncio
 import numpy
 import pandas
 
@@ -13,27 +14,24 @@ class DungeonsAndDragons(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
-            help = "Rolls a die with the given number of sides.",
-            brief = "Roll n sided die."
-            )
-    async def roll(self, ctx, n):
-        n = int(n)
-        message = "{} is an invalid number to roll.".format(n)
-        if n > 0:
-            val = random.randint(1, n)
-            message = "Rolling {}-sided die... rolled {}".format(n, val)
+    @cog_ext.cog_slash(
+        name="roll",
+        description="Rolls a die with the given number of sides"
+    )
+    async def _roll(self, ctx: SlashContext, sides: int):
+        message = "{} is an invalid number to roll.".format(sides)
+        if sides > 0:
+            val = random.randint(1, sides)
+            message = "Rolling {}-sided die... rolled {}".format(sides, val)
         await ctx.send(message)
 
-    @commands.command(
-            help = "Prints information about the given spell from D&D 5e.",
-            brief = "Print spell info."
-            )
-    async def get_spell_info(self, ctx, *spellName):
-        spellName = " ".join(spellName)
-        spellInfo = "Spell not found: " + spellName
-        if spellName in allSpellsDf["Spell Name"].values:
-            spellEntry = allSpellsDf.loc[allSpellsDf['Spell Name'] == spellName].values.tolist()
+    @cog_ext.cog_slash(
+        name="spell"
+    )
+    async def _spell(self, ctx: SlashContext, spellname: str):
+        spellInfo = "Spell not found: " + spellname
+        if spellname in allSpellsDf["Spell Name"].values:
+            spellEntry = allSpellsDf.loc[allSpellsDf['Spell Name'] == spellname].values.tolist()
             name, level, school, ritual, castingTime, range, area, v, s, m, component, cost, concentration, duration, effect, damageType, damageOrHeal, sourcebook, page, details, higherLevel, bard, cleric, druid, paladin, ranger, sorceror, warlock, wizard = spellEntry[0]
             spellInfo = str(name) + "\n"
             if level == 0:
@@ -84,4 +82,3 @@ class DungeonsAndDragons(commands.Cog):
             if higherLevel != 0:
                 spellInfo += "At Higher Levels: " + str(higherLevel) + "\n"
         await ctx.send(spellInfo)
-
