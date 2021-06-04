@@ -2,16 +2,12 @@ import discord
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 import random
-#import requests
-#import asyncio
 import numpy
 import pandas
 import difflib
 import math
 
-#allSpellsDf = pandas.read_csv("All_Spells.csv", encoding = "iso-8859-1")
 allSpellsDf = pandas.read_csv("spells.csv", delimiter="\t", encoding = "utf-8", index_col=False)
-#allSpellsDf = allSpellsDf.fillna(0)
 allSpellNames = allSpellsDf['Name'].tolist()
 
 class DungeonsAndDragons(commands.Cog):
@@ -69,8 +65,26 @@ class DungeonsAndDragons(commands.Cog):
 
         MAX_FIELD_VALUE_LENGTH = 1024
         description = spellEntry['Description'].values[0].replace("\\n", '\n')
-        for i in range(math.ceil(float(len(description)) / MAX_FIELD_VALUE_LENGTH)):
-            descriptionChunk = description[i * MAX_FIELD_VALUE_LENGTH:(i + 1) * MAX_FIELD_VALUE_LENGTH]
-            embed.add_field(name="Description", value=descriptionChunk, inline=False)
+        firstChunk = True
+        startIndex = 0
+        endIndex = MAX_FIELD_VALUE_LENGTH
+        while startIndex < len(description):
+            fieldName = "​" # no-width character to hide field name
+            if firstChunk:
+                fieldName = "Description"
+                firstChunk = False
+
+            endIndex = startIndex + MAX_FIELD_VALUE_LENGTH
+            print("StartIndex = {}".format(startIndex))
+            if (len(description) > endIndex) and ("\n" in description[startIndex:endIndex]):
+                print("Splitting at newline")
+                # split description by last newline in this chunk
+                endIndex = description.rfind('\n', startIndex, endIndex)
+
+            print("EndIndex = {}".format(endIndex))
+            descriptionChunk = description[startIndex:endIndex]
+            startIndex = endIndex
+            
+            embed.add_field(name=fieldName, value=descriptionChunk, inline=False)
         await ctx.send(embed=embed)
 
