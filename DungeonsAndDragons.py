@@ -9,6 +9,16 @@ import math
 
 allSpellsDf = pandas.read_csv("spells.csv", delimiter="\t", encoding = "utf-8", index_col=False)
 allSpellNames = allSpellsDf['Name'].tolist()
+spellIconLinks = {
+        "abjuration": "https://media-waterdeep.cursecdn.com/attachments/2/707/abjuration.png",
+        "conjuration": "https://media-waterdeep.cursecdn.com/attachments/2/708/conjuration.png",
+        "divination": "https://media-waterdeep.cursecdn.com/attachments/2/709/divination.png",
+        "enchantment": "https://media-waterdeep.cursecdn.com/attachments/2/702/enchantment.png",
+        "evocation": "https://media-waterdeep.cursecdn.com/attachments/2/703/evocation.png",
+        "illusion": "https://media-waterdeep.cursecdn.com/attachments/2/704/illusion.png",
+        "necromancy": "https://media-waterdeep.cursecdn.com/attachments/2/720/necromancy.png",
+        "transmutation": "https://media-waterdeep.cursecdn.com/attachments/2/722/transmutation.png"
+        }
 
 class DungeonsAndDragons(commands.Cog):
     def __init__(self, bot):
@@ -43,6 +53,7 @@ class DungeonsAndDragons(commands.Cog):
 
         embed.add_field(name="Level", value=spellEntry['Level'].values[0], inline=True)
         embed.add_field(name="School", value=spellEntry['School'].values[0], inline=True)
+        embed.set_thumbnail(url=spellIconLinks[spellEntry['School'].values[0]])
 
         embed.add_field(name="Ritual", value=spellEntry['Ritual'].values[0], inline=True)
 
@@ -75,13 +86,10 @@ class DungeonsAndDragons(commands.Cog):
                 firstChunk = False
 
             endIndex = startIndex + MAX_FIELD_VALUE_LENGTH
-            print("StartIndex = {}".format(startIndex))
             if (len(description) > endIndex) and ("\n" in description[startIndex:endIndex]):
-                print("Splitting at newline")
                 # split description by last newline in this chunk
                 endIndex = description.rfind('\n', startIndex, endIndex)
 
-            print("EndIndex = {}".format(endIndex))
             descriptionChunk = description[startIndex:endIndex]
             startIndex = endIndex
             
