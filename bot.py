@@ -8,6 +8,7 @@ import myToken
 import AccessGoogleSheet
 import VideoGames
 import DungeonsAndDragons
+import Administration
 import numpy
 import pandas
 import guilds
@@ -19,6 +20,7 @@ slash = SlashCommand(bot, sync_commands=True)
 
 bot.add_cog(VideoGames.VideoGames(bot))
 bot.add_cog(DungeonsAndDragons.DungeonsAndDragons(bot))
+bot.add_cog(Administration.Administration(bot))
 
 @slash.slash(name="ping", guild_ids=guilds.guild_ids)
 async def _pint(ctx):
