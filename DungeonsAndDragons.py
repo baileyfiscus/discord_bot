@@ -6,9 +6,13 @@ import random
 #import asyncio
 import numpy
 import pandas
+import difflib
+import math
 
-allSpellsDf = pandas.read_csv("All_Spells.csv", encoding = "iso-8859-1")
-allSpellsDf = allSpellsDf.fillna(0)
+#allSpellsDf = pandas.read_csv("All_Spells.csv", encoding = "iso-8859-1")
+allSpellsDf = pandas.read_csv("spells.csv", delimiter="\t", encoding = "utf-8", index_col=False)
+#allSpellsDf = allSpellsDf.fillna(0)
+allSpellNames = allSpellsDf['Name'].tolist()
 
 class DungeonsAndDragons(commands.Cog):
     def __init__(self, bot):
@@ -26,59 +30,47 @@ class DungeonsAndDragons(commands.Cog):
         await ctx.send(message)
 
     @cog_ext.cog_slash(
-        name="spell"
+        name="spell",
+        description="Provides information about the given D&D 5E spell"
     )
     async def _spell(self, ctx: SlashContext, spellname: str):
-        spellInfo = "Spell not found: " + spellname
-        if spellname in allSpellsDf["Spell Name"].values:
-            spellEntry = allSpellsDf.loc[allSpellsDf['Spell Name'] == spellname].values.tolist()
-            name, level, school, ritual, castingTime, range, area, v, s, m, component, cost, concentration, duration, effect, damageType, damageOrHeal, sourcebook, page, details, higherLevel, bard, cleric, druid, paladin, ranger, sorceror, warlock, wizard = spellEntry[0]
-            spellInfo = str(name) + "\n"
-            if level == 0:
-                spellInfo += "Cantrip"
-            else:
-                spellInfo += str(level)
-                if level == 1:
-                    spellInfo += "st"
-                elif level == 2:
-                    spellInfo += "nd"
-                elif level == 3:
-                    spellInfo += "rd"
-                else:
-                    spellInfo += "th"
-            spellInfo += " " + str(school) + "\n"
-            spellInfo += "Casting Time: " + str(castingTime) + "\n"
-            spellInfo += "Range: " + str(range) + "\n"
-            if v !=0 or s != 0 or m != 0:
-                spellInfo += "Componenents: "
-                componentsList = []
-                if v != 0:
-                    componentsList.append(v)
-                if s != 0:
-                    componentsList.append(s)
-                if m != 0:
-                    componentsList.append(m)
-                spellInfo += ", ".join(componentsList) + "\n"
-            spellInfo += "Duration: " + str(duration) + "\n"
-            classesList = []
-            if bard != 0:
-                classesList.append("Bard")
-            if cleric != 0:
-                classesList.append("Cleric")
-            if druid != 0:
-                classesList.append("Druid")
-            if paladin != 0:
-                classesList.append("Paladin")
-            if ranger != 0:
-                classesList.append("Ranger")
-            if sorceror != 0:
-                classesList.append("Sorceror")
-            if warlock != 0:
-                classesList.append("Warlock")
-            if wizard != 0:
-                classesList.append("Wizard")
-            spellInfo += "Classes: " + ", ".join(classesList) + "\n"
-            spellInfo += str(details) + "\n"
-            if higherLevel != 0:
-                spellInfo += "At Higher Levels: " + str(higherLevel) + "\n"
-        await ctx.send(spellInfo)
+        closestMatch = difflib.get_close_matches(spellname, allSpellNames, n=1)
+        if (len(closestMatch) == 0):
+            await ctx.send("Spell not found: " + spellname)
+            return
+        spellname = closestMatch[0]
+        spellIndex = numpy.where(allSpellsDf['Name'] == spellname)[0]
+        spellEntry = allSpellsDf.iloc[spellIndex]
+
+        todo = "todo"
+        embed=discord.Embed(color=0xffff00, title=spellname)
+
+        embed.add_field(name="Level", value=spellEntry['Level'].values[0], inline=True)
+        embed.add_field(name="School", value=spellEntry['School'].values[0], inline=True)
+
+        embed.add_field(name="Ritual", value=spellEntry['Ritual'].values[0], inline=True)
+
+        embed.add_field(name="Casting Time", value=spellEntry['Casting Time'].values[0], inline=True)
+        embed.add_field(name="Range", value=spellEntry['Range'].values[0], inline=True)
+
+        components = ""
+        if spellEntry['Verbal'].values[0] == True:
+            components += "V "
+        if spellEntry['Somatic'].values[0] == True:
+            components += "S "
+        if spellEntry['Material'].values[0] == True:
+            components += "M ({})".format(spellEntry['Materials'].values[0])
+        embed.add_field(name="Components", value=components, inline=False)
+
+        embed.add_field(name="Concentration", value=spellEntry['Concentration'].values[0], inline=True)
+        embed.add_field(name="Duration", value=spellEntry['Duration'].values[0], inline=True)
+
+        embed.add_field(name="Classes", value=spellEntry['Classes'].values[0], inline=False)
+
+        MAX_FIELD_VALUE_LENGTH = 1024
+        description = spellEntry['Description'].values[0].replace("\\n", '\n')
+        for i in range(math.ceil(float(len(description)) / MAX_FIELD_VALUE_LENGTH)):
+            descriptionChunk = description[i * MAX_FIELD_VALUE_LENGTH:(i + 1) * MAX_FIELD_VALUE_LENGTH]
+            embed.add_field(name="Description", value=descriptionChunk, inline=False)
+        await ctx.send(embed=embed)
+
