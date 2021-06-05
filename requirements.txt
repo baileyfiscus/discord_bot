@@ -15,7 +15,7 @@ discord-py-slash-command==1.2.0
 discord.py==1.6.0
 entrypoints==0.3
 gspread==3.3.0
-httplib2==0.17.0
+httplib2==0.19.0
 idna==2.9
 idna-ssl==1.1.0
 keyring==17.1.1
