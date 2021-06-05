@@ -19,8 +19,30 @@ class Administration(commands.Cog):
         description="Grant the given role (if you have the necessary permissions to do so)."
     )
     async def _grant(self, ctx: SlashContext, role: str):
-        print(role)
-        print(discord.utils.get(ctx.guild.roles, name=role))
-        #await ctx.author.add_roles(rol)
+        fellaRole = discord.utils.get(ctx.guild.roles, name="Fellas")
+        if fellaRole not in ctx.author.roles:
+            await ctx.send("You do not have permission to be granted roles by me.")
+            return
+
+        if not role.startswith("<@&"):
+            await ctx.send("Please @ the role you wish to have granted.")
+            return
+
+        rolename = discord.utils.get(ctx.guild.roles, id=int(role[3:-1]))
+
+        if rolename == discord.utils.get(ctx.guild.roles, name="Admin"):
+            await ctx.send("Reeee gimme admin reeee.")
+            return
+
+        if rolename == None:
+            await ctx.send("Could not find that role.")
+            return
+
+        try:
+            await ctx.author.add_roles(rolename)
+            await ctx.send("Granted {}.".format(rolename))
+        except:
+            await ctx.send("I cannot grant {}.".format(rolename))
+        return
 
 
