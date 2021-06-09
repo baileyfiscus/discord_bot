@@ -16,7 +16,7 @@ import guilds
 command_prefix='$'
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix, intents=intents)
-slash = SlashCommand(bot, sync_commands=True)
+slash = SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
 bot.add_cog(VideoGames.VideoGames(bot))
 bot.add_cog(DungeonsAndDragons.DungeonsAndDragons(bot))
